@@ -15,4 +15,4 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
-      run: docker build ./docker/P2000 --file Dockerfile --tag rtl-sdr-p2000receiver-ha:$(date +%s)
+      run: docker build ./docker/P2000 --tag rtl-sdr-p2000receiver-ha:$(date +%s)
