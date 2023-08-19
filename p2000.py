@@ -201,11 +201,6 @@ def load_config(filename):
     config["rtl-sdr"] = {
         "cmd": "rtl_fm -f 169.65M -M fm -s 22050 | multimon-ng -a FLEX -t raw -"
     }
-    config["home-assistant"] = {
-        "enabled": True,
-        "baseurl": "http://homeassistant.local:8123",
-        "token": "Place your Long-Lived Access Token here",
-    }
     config["mqtt"] = {
         "enabled": False,
         "mqtt_server": "192.168.1.100",
