@@ -17,7 +17,6 @@ from logging.handlers import TimedRotatingFileHandler as _TimedRotatingFileHandl
 
 import geopy.distance
 import paho.mqtt.client as mqtt
-import requests
 from opencage.geocoder import InvalidInputError, OpenCageGeocode, RateLimitExceededError
 
 VERSION = "0.1.1"
@@ -80,72 +79,7 @@ class TimedRotatingFileHandler(_TimedRotatingFileHandler):
         self.rolloverAt = newrolloverat
 
 
-class Logger:
-    """Logger class."""
 
-    my_logger = None
-
-    def __init__(self, datadir, logstokeep, debug_enabled):
-        """Logger init."""
-        self.my_logger = logging.getLogger()
-        if debug_enabled:
-            self.my_logger.setLevel(logging.DEBUG)
-            self.my_logger.propagate = False
-        else:
-            self.my_logger.setLevel(logging.INFO)
-            self.my_logger.propagate = False
-
-        date_fmt = "%Y-%m-%d %H:%M:%S"
-        formatter = logging.Formatter(
-            "%(asctime)s - (%(threadName)-10s) - %(filename)s - %(levelname)s - %(message)s",
-            date_fmt,
-        )
-        console_formatter = logging.Formatter(
-            "%(asctime)s - (%(threadName)-10s) - %(filename)s - %(levelname)s - %(message)s",
-            date_fmt,
-        )
-        # Create directory if not exists
-        if not os.path.exists(f"{datadir}/logs"):
-            os.makedirs(f"{datadir}/logs")
-
-        # Log to file and rotate if needed
-        file_handle = TimedRotatingFileHandler(
-            filename=f"{datadir}/logs/p2000.log", backupCount=logstokeep
-        )
-        file_handle.setFormatter(formatter)
-        self.my_logger.addHandler(file_handle)
-
-        # Log to console
-        console_handle = logging.StreamHandler()
-        console_handle.setFormatter(console_formatter)
-        self.my_logger.addHandler(console_handle)
-
-    def log(self, message, level="info"):
-        """Call the log levels."""
-        if level == "info":
-            self.my_logger.info(message)
-        elif level == "warning":
-            self.my_logger.warning(message)
-        elif level == "error":
-            self.my_logger.error(message)
-        elif level == "debug":
-            self.my_logger.debug(message)
-
-    def info(self, message):
-        """Info level."""
-        self.log(message, "info")
-
-    def warning(self, message):
-        """Warning level."""
-        self.log(message, "warning")
-
-    def error(self, message):
-        """Error level."""
-        self.log(message, "error")
-
-    def debug(self, message):
-        """Debug level."""
-        self.log(message, "debug")
 
 
 class MessageItem:
@@ -177,84 +111,10 @@ class MessageItem:
         self.friendly_name = ""
 
 
-def load_config(filename):
-    """Create default or load existing config file."""
-    config = configparser.ConfigParser()
-    filename = f"{datadir}/{filename}"
-
-    if config.read(filename):
-
-        # Upgrade config if needed
-        if config.has_option("home-assistant", "sensorname"):
-            config.add_section("sensor_p2000")
-            config.set("sensor_p2000", "zone_latitude", "52.37602835336776")
-            config.set("sensor_p2000", "zone_longitude", "4.902929475786443")
-            config.set("sensor_p2000", "zone_radius", "0")
-            config.remove_option("home-assistant", "sensorname")
-
-            with open(filename, "w+") as cfgfile:
-                config.write(cfgfile)
-
-        return config
-
-    config["main"] = {"debug": False, "logtofile": False}
-    config["rtl-sdr"] = {
-        "cmd": "rtl_fm -f 169.65M -M fm -s 22050 | multimon-ng -a FLEX -t raw -"
-    }
-    config["mqtt"] = {
-        "enabled": False,
-        "mqtt_server": "192.168.1.100",
-        "mqtt_port": 1883,
-        "mqtt_user": "mqttuser",
-        "mqtt_password": "somepassword",
-        "mqtt_topic": "p2000",
-    }
-    config["opencage"] = {
-        "enabled": False,
-        "token": "Place your OpenCage API Token here",
-    }
-    config["sensor_p2000"] = {
-        "zone_latitude": "52.37602835336776",
-        "zone_longitude": "4.902929475786443",
-        "zone_radius": "0",
-    }
-    with open(filename, "w") as configfile:
-        config.write(configfile)
-
-    return False
 
 
-def check_requirements(self):
-    """Check if required software is installed."""
-    self.logger.info("Checking if required software is installed")
-    # Check if rtl_fm is installed
-    process = subprocess.Popen(
-        "rtl_fm", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    # Wait for the process to finish
-    dummy, err = process.communicate()
-    error_str = err.decode("utf8")
-    if "not found" in error_str or "not recognized" in error_str:
-        self.logger.debug("rtl_fm command not found, please install RTL-SDR software")
-        return False
 
-    self.logger.debug("rtl_fm is found")
 
-    # Check if multimon-ng is installed
-    process = subprocess.Popen(
-        "multimon-ng -h", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    # Wait for the process to finish
-    dummy, err = process.communicate()
-    error_str = err.decode("utf8")
-    if "not found" in error_str:
-        self.logger.error(
-            "multimon-ng not found, please install the multimon-ng package"
-        )
-        return False
-
-    self.logger.debug("multimon-ng is found")
-    return True
 
 
 def load_capcodes_dict(self, filename):
