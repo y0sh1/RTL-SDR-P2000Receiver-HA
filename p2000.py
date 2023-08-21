@@ -462,9 +462,9 @@ class Main:
             sys.exit(0)
 
         self.rtlfm_cmd = self.config.get("rtl-sdr", "cmd")
-        self.use_hass = self.config.getboolean("home-assistant", "enabled")
-        self.baseurl = self.config.get("home-assistant", "baseurl")
-        self.token = self.config.get("home-assistant", "token")
+        # Start thread to post messages to Home Assistant
+        post_thread = threading.Thread(name="PostThread", target=self.post_thread_call)
+        post_thread.start()
 
         self.use_mqtt = self.config.getboolean("mqtt", "enabled")
         self.mqtt_server = self.config.get("mqtt", "mqtt_server")
@@ -505,9 +505,19 @@ class Main:
         data_thread = threading.Thread(name="DataThread", target=self.data_thread_call)
         data_thread.start()
 
-        # Start thread to post messages to Home Assistant
-        post_thread = threading.Thread(name="PostThread", target=self.post_thread_call)
-        post_thread.start()
+        def post_thread_call(self):
+        """Thread for posting data."""
+        self.logger.debug("Post thread started")
+        while True:
+            if self.running is False:
+                break
+        
+            now = time.monotonic()
+            for msg in self.messages:
+                if msg.is_posted is False and now - msg.timereceived >= 1.0:
+                    pass
+            time.sleep(1.0)
+        self.logger.debug("Post thread stopped")
 
         # Run the wait loop
         while True:
@@ -1107,22 +1117,6 @@ class Main:
             os.kill(multimon_ng.pid, 9)
 
         self.logger.debug("Data thread stopped")
-
-    # Thread for posting data to Home Assistant
-    def post_thread_call(self):
-        """Thread for posting data."""
-        self.logger.debug("Post thread started")
-        while True:
-            if self.running is False:
-                break
-
-            now = time.monotonic()
-            for msg in self.messages:
-                if msg.is_posted is False and now - msg.timereceived >= 1.0:
-                    self.post_data(msg)
-            time.sleep(1.0)
-        self.logger.debug("Post thread stopped")
-
 
 # Start application
 Main()
